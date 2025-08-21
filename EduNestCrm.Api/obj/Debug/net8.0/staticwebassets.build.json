@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "SizePk96s6ffNxBJu9glA/6IyNk7DFtmY4HW8OvyXJs=",
+  "Source": "EduNestCrm.Api",
+  "BasePath": "_content/EduNestCrm.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}

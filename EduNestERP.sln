@@ -3,7 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EduNestCrm.Api", "EduNestCrm.Api\EduNestCrm.Api.csproj", "{0F290556-E2E1-4E24-902C-07C98366290F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EduNestERP.Api", "EduNestERP.Api\EduNestERP.Api.csproj", "{0F290556-E2E1-4E24-902C-07C98366290F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EduNestERP.Persistence", "EduNestERP.Persistence\EduNestERP.Persistence.csproj", "{6D647156-379A-49E2-8193-4937C574663B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EduNestERP.Application", "EduNestERP.Application\EduNestERP.Application.csproj", "{77AE5D3F-706E-4CF7-9892-3A9F5628C04A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,5 +22,13 @@ Global
 		{0F290556-E2E1-4E24-902C-07C98366290F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0F290556-E2E1-4E24-902C-07C98366290F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0F290556-E2E1-4E24-902C-07C98366290F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6D647156-379A-49E2-8193-4937C574663B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6D647156-379A-49E2-8193-4937C574663B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6D647156-379A-49E2-8193-4937C574663B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6D647156-379A-49E2-8193-4937C574663B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77AE5D3F-706E-4CF7-9892-3A9F5628C04A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77AE5D3F-706E-4CF7-9892-3A9F5628C04A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77AE5D3F-706E-4CF7-9892-3A9F5628C04A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77AE5D3F-706E-4CF7-9892-3A9F5628C04A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

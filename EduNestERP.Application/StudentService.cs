@@ -12,9 +12,9 @@ namespace EduNestERP.Application.Services
             _studentRepository = studentRepository;
         }
 
-        public async Task<IEnumerable<Student>> SearchStudentsAsync(string? firstName, string? lastName, string? grade)
+        public async Task<IEnumerable<Student>> SearchStudentsAsync(string? firstName, string? lastName, string? grade, string? section)
         {
-            return await _studentRepository.SearchStudentsAsync(firstName, lastName, grade);
+            return await _studentRepository.SearchStudentsAsync(firstName, lastName, grade, section);
         }
 
         public async Task<bool> AddStudentsBulkAsync(List<Student> students)

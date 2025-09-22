@@ -9,6 +9,6 @@ public interface IStudentRepository : IRepository<Student>
 
     Task<Student?> GetByEduNestIdAsync(string eduNestId);
 
-    Task<IEnumerable<Student>> SearchStudentsAsync(string? firstName, string? lastName, string? grade);
+    Task<IEnumerable<Student>> SearchStudentsAsync(string? firstName, string? lastName, string? grade, string? section);
 
 }

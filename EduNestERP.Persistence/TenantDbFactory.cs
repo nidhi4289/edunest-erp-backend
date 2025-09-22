@@ -17,6 +17,7 @@ public sealed class TenantDbFactory
         _pwd    = _cfg["DB_PASSWORD"] ?? throw new("DB_PASSWORD missing");
         _prefix = _cfg["DB_NAME_PREFIX"] ?? "ed_";
         _port   = int.TryParse(_cfg["DB_PORT"], out var p) ? p : 5432;
+        
     }
 
     public NpgsqlDataSource Get(string tenantId)
@@ -37,8 +38,10 @@ public sealed class TenantDbFactory
                 Timeout = 5,
                 ConnectionIdleLifetime = 30,
                 ConnectionPruningInterval = 10,
-                // Dev: Disable; Prod (RDS): Require or VerifyFull
-                SslMode = SslMode.Disable
+                // Use SSL for production, disable for local development
+                SslMode = _host.Contains("localhost") || _host.Contains("127.0.0.1") 
+                    ? SslMode.Disable 
+                    : SslMode.Require
             };
 
             return new NpgsqlDataSourceBuilder(csb.ConnectionString).Build();

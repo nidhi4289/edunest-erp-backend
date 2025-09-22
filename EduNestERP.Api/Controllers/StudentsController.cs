@@ -24,9 +24,10 @@ namespace EduNestERP.Api.Controllers
         public async Task<IActionResult> Get(
             [FromQuery] string? firstName,
             [FromQuery] string? lastName,
-            [FromQuery] string? grade)
+            [FromQuery] string? grade,
+            [FromQuery] string? section)
         {
-            var students = await _studentService.SearchStudentsAsync(firstName, lastName, grade);
+            var students = await _studentService.SearchStudentsAsync(firstName, lastName, grade, section);
             var studentsDto = _mapper.Map<List<StudentDto>>(students);
             return Ok(studentsDto);
         }

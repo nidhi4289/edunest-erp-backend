@@ -10,12 +10,15 @@ namespace EduNestERP.Persistence.Repositories
         {
         }
 
-       public async Task<IEnumerable<Student>> SearchStudentsAsync(string? firstName, string? lastName, string? grade)
+        public async Task<IEnumerable<Student>> SearchStudentsAsync(string? firstName, string? lastName, string? grade, string? section)
         {
             var students = new List<Student>();
 
-            var sql = @"SELECT edunest_id, first_name, last_name, date_of_birth, grade, section, status, created_at, created_by, father_name, father_email, mother_name, mother_email, admission_number, address_line1, address_line2, city, state, zip, country, phone_number, secondary_phone_number, email, modified_at, modified_by
-                        FROM students WHERE 1=1";
+            //put join on class
+            var sql = @"SELECT s.edunest_id, s.first_name, s.last_name, s.date_of_birth, c.grade, c.section, s.status, s.created_at, s.created_by, s.father_name, s.father_email, s.mother_name, s.mother_email, s.admission_number, s.address_line1, s.address_line2, s.city, s.state, s.zip, s.country, s.phone_number, s.secondary_phone_number, s.email, s.modified_at, s.modified_by, c.id as class_id
+                        FROM students s
+                        LEFT JOIN classes c ON s.classid = c.id
+                        WHERE 1=1";
             var parameters = new List<NpgsqlParameter>();
 
             if (!string.IsNullOrWhiteSpace(firstName))
@@ -30,8 +33,13 @@ namespace EduNestERP.Persistence.Repositories
             }
             if (!string.IsNullOrWhiteSpace(grade))
             {
-                sql += " AND LOWER(grade) = @Grade";
+                sql += " AND LOWER(c.grade) = @Grade";
                 parameters.Add(new NpgsqlParameter("Grade", grade.ToLower()));
+            }
+            if (!string.IsNullOrWhiteSpace(section))
+            {
+                sql += " AND LOWER(c.section) = @Section";
+                parameters.Add(new NpgsqlParameter("Section", section.ToLower()));
             }
 
             await using var conn = await _dataSource.OpenConnectionAsync();
@@ -77,7 +85,7 @@ namespace EduNestERP.Persistence.Repositories
         public override async Task<Student?> GetByIdAsync(Guid id)
         {
             await using var conn = await _dataSource.OpenConnectionAsync();
-            const string sql = "SELECT edunest_id, first_name, last_name, grade, status, created_at FROM students WHERE id = @id";
+            const string sql = "SELECT edunest_id, first_name, last_name, c.grade, status, created_at FROM students s left JOIN classes c ON s.classid = c.id  WHERE id = @id";
             await using var cmd = new NpgsqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("id", id);
             await using var rdr = await cmd.ExecuteReaderAsync();
@@ -99,7 +107,7 @@ namespace EduNestERP.Persistence.Repositories
         public async Task<Student?> GetByEduNestIdAsync(string eduNestId)
         {
             await using var conn = await _dataSource.OpenConnectionAsync();
-            const string sql = "SELECT edunest_id, first_name, last_name, date_of_birth, grade, section, status, created_at, created_by, father_name, father_email, mother_name, mother_email, admission_number, address_line1, address_line2, city, state, zip, country, phone_number, secondary_phone_number, email, modified_at, modified_by FROM students WHERE edunest_id = @EduNestId";
+            const string sql = "SELECT edunest_id, first_name, last_name, date_of_birth, c.grade, c.section, status, s.created_at, created_by, father_name, father_email, mother_name, mother_email, admission_number, address_line1, address_line2, city, state, zip, country, phone_number, secondary_phone_number, email, modified_at, modified_by FROM students s left JOIN classes c ON s.classid = c.id  WHERE edunest_id = @EduNestId";
             await using var cmd = new NpgsqlCommand(sql, conn);
             cmd.Parameters.AddWithValue("EduNestId", eduNestId);
             await using var rdr = await cmd.ExecuteReaderAsync();
@@ -153,7 +161,7 @@ namespace EduNestERP.Persistence.Repositories
                 throw;
             }
         }
-        
+
         public override async Task<bool?> UpdateAsync(Student student)
         {
             await using var conn = await _dataSource.OpenConnectionAsync();
@@ -201,11 +209,11 @@ namespace EduNestERP.Persistence.Repositories
                         await InsertStudentAsync(student, conn, transaction);
                     }
                 }
-                
+
                 await transaction.CommitAsync();
                 return true;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 Console.WriteLine(e);
                 await transaction.RollbackAsync();
@@ -215,19 +223,32 @@ namespace EduNestERP.Persistence.Repositories
 
         public async Task<int> InsertStudentAsync(Student student, NpgsqlConnection conn, NpgsqlTransaction transaction)
         {
-        
+
             Console.WriteLine($"Inserting student: {student}");
 
+            //fetch class_id
+            const string classSql = @"SELECT id FROM classes WHERE grade = @Grade and section = @Section";
+            await using var classCmd = new NpgsqlCommand(classSql, conn, transaction);
+            classCmd.Parameters.AddWithValue("Grade", student.Grade);
+            classCmd.Parameters.AddWithValue("Section", student.Section);
+
+            var classId = await classCmd.ExecuteScalarAsync() as Guid?;
+
+            if (!classId.HasValue)
+            {
+                throw new Exception("Class not found");
+            }
+
+            student.ClassId = classId.Value;
+
             const string sql = @"INSERT INTO students 
-                (edunest_id, first_name, last_name, date_of_birth, grade, section, status, created_at, created_by, father_name, father_email, mother_name, mother_email, admission_number, address_line1, address_line2, city, state, zip, country, phone_number, secondary_phone_number, email)
-                VALUES (@EduNestId, @FirstName, @LastName, @DateOfBirth, @Grade, @Section, @Status, @CreatedAt, @CreatedBy, @FatherName, @FatherEmail, @MotherName, @MotherEmail, @AdmissionNumber, @AddressLine1, @AddressLine2, @City, @State, @Zip, @Country, @PhoneNumber, @SecondaryPhoneNumber, @Email)";
+                (edunest_id, first_name, last_name, date_of_birth, status, created_at, created_by, father_name, father_email, mother_name, mother_email, admission_number, address_line1, address_line2, city, state, zip, country, phone_number, secondary_phone_number, email, classid)
+                VALUES (@EduNestId, @FirstName, @LastName, @DateOfBirth, @Status, @CreatedAt, @CreatedBy, @FatherName, @FatherEmail, @MotherName, @MotherEmail, @AdmissionNumber, @AddressLine1, @AddressLine2, @City, @State, @Zip, @Country, @PhoneNumber, @SecondaryPhoneNumber, @Email, @ClassId)";
             await using var cmd = new NpgsqlCommand(sql, conn, transaction);
             cmd.Parameters.AddWithValue("EduNestId", student.EduNestId);
             cmd.Parameters.AddWithValue("FirstName", student.FirstName);
             cmd.Parameters.AddWithValue("LastName", student.LastName);
             cmd.Parameters.AddWithValue("DateOfBirth", student.DateOfBirth);
-            cmd.Parameters.AddWithValue("Grade", student.Grade);
-            cmd.Parameters.AddWithValue("Section", student.Section);
             cmd.Parameters.AddWithValue("Status", student.Status);
             cmd.Parameters.AddWithValue("CreatedAt", DateTime.Now);
             cmd.Parameters.AddWithValue("CreatedBy", "BulkUpload");
@@ -245,15 +266,46 @@ namespace EduNestERP.Persistence.Repositories
             cmd.Parameters.AddWithValue("PhoneNumber", student.PhoneNumber ?? "");
             cmd.Parameters.AddWithValue("SecondaryPhoneNumber", student.SecondaryPhoneNumber ?? "");
             cmd.Parameters.AddWithValue("Email", student.Email ?? "");
-            return await cmd.ExecuteNonQueryAsync();
+            cmd.Parameters.AddWithValue("ClassId", student.ClassId);
+            await cmd.ExecuteNonQueryAsync();
+
+           // Add user entry for student
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                UserId = student.EduNestId,
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("Start123", workFactor: 11),
+                Role = "Student",
+                FirstLoginCompleted = false
+            };
+            const string userSql = @"INSERT INTO users (id, user_id, password_hash, role, first_login_completed) VALUES (@id, @user_id, @password_hash, @role, @first_login_completed)";
+            await using var userCmd = new Npgsql.NpgsqlCommand(userSql, conn);
+            userCmd.Parameters.AddWithValue("id", user.Id);
+            userCmd.Parameters.AddWithValue("user_id", user.UserId);
+            userCmd.Parameters.AddWithValue("password_hash", user.PasswordHash);
+            userCmd.Parameters.AddWithValue("role", user.Role);
+            userCmd.Parameters.AddWithValue("first_login_completed", user.FirstLoginCompleted);
+            return await userCmd.ExecuteNonQueryAsync();
+
         }
-       
+
         public async Task<int> UpdateStudentAsync(Student student, NpgsqlConnection conn, NpgsqlTransaction transaction)
         {
+            // Fetch the current class ID
+            const string classSql = @"SELECT id FROM classes WHERE grade = @Grade and section = @Section";
+            await using var classCmd = new NpgsqlCommand(classSql, conn, transaction);
+            classCmd.Parameters.AddWithValue("Grade", student.Grade);
+            classCmd.Parameters.AddWithValue("Section", student.Section);
+
+            var classId = await classCmd.ExecuteScalarAsync() as Guid?;
+            if (!classId.HasValue)
+            {
+                throw new Exception("Class not found");
+            }
+            student.ClassId = classId.Value;
+
             Console.WriteLine($"Updating student: {student}");
             const string sql = @"UPDATE students SET
-            grade = @Grade,
-            section = @Section,
             status = @Status,
             modified_at = @ModifiedAt,
             modified_by = @ModifiedBy,
@@ -270,15 +322,14 @@ namespace EduNestERP.Persistence.Repositories
             country = @Country,
             phone_number = @PhoneNumber,
             secondary_phone_number = @SecondaryPhoneNumber,
-            email = @Email
+            email = @Email,
+            classid = @ClassId
             WHERE edunest_id = @EduNestId";
 
             await using var cmd = new NpgsqlCommand(sql, conn, transaction);
-            cmd.Parameters.AddWithValue("Grade", student.Grade);
-            cmd.Parameters.AddWithValue("Section", student.Section);
             cmd.Parameters.AddWithValue("Status", student.Status);
             cmd.Parameters.AddWithValue("ModifiedAt", student.ModifiedAt ?? DateTime.UtcNow);
-            cmd.Parameters.AddWithValue("ModifiedBy", student.ModifiedBy );
+            cmd.Parameters.AddWithValue("ModifiedBy", student.ModifiedBy);
             cmd.Parameters.AddWithValue("FatherName", student.FatherName);
             cmd.Parameters.AddWithValue("FatherEmail", student.FatherEmail ?? "");
             cmd.Parameters.AddWithValue("MotherName", student.MotherName);
@@ -294,9 +345,12 @@ namespace EduNestERP.Persistence.Repositories
             cmd.Parameters.AddWithValue("SecondaryPhoneNumber", student.SecondaryPhoneNumber ?? "");
             cmd.Parameters.AddWithValue("Email", student.Email ?? "");
             cmd.Parameters.AddWithValue("EduNestId", student.EduNestId);
+            cmd.Parameters.AddWithValue("ClassId", student.ClassId);
             return await cmd.ExecuteNonQueryAsync();
 
         }
 
+
+   
     }
 }

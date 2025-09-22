@@ -2,6 +2,7 @@ namespace EduNestERP.Persistence.Entities
 {
     public class User
     {
+        public Guid Id { get; set; } = Guid.NewGuid();
         public string UserId { get; set; } = "";
         public string Role { get; set; } = "";
         public string Name { get; set; } = "";

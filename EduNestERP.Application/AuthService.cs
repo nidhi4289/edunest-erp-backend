@@ -20,7 +20,7 @@ public sealed class AuthService : IAuthService
     public async Task<LoginResult> LoginAsync(string tenantId, string userId, string password, CancellationToken ct = default)
     {
         var ds = _factory.Get(tenantId);
-        var user = await _users.GetByUserIdAsync(ds, userId.Trim().ToLowerInvariant(), ct);
+        var user = await _users.GetByUserIdAsync(ds, userId.Trim(), ct);
         if (user is null) throw new UnauthorizedAccessException();
 
         if (!BCrypt.Net.BCrypt.Verify(password, user.PasswordHash))
@@ -28,7 +28,7 @@ public sealed class AuthService : IAuthService
 
         if (!user.FirstLoginCompleted)
         {
-            return new LoginResult("", "", true);
+            return new LoginResult("", "", true,user.Id);
         }
         // (Optionally enforce first_login_completed here)
 
@@ -42,13 +42,13 @@ public sealed class AuthService : IAuthService
         };
         var jwt = new JwtSecurityToken(claims: claims, expires: DateTime.UtcNow.AddHours(8), signingCredentials: creds);
         var token = new JwtSecurityTokenHandler().WriteToken(jwt);
-        return new LoginResult(token, user.Role,false);
+        return new LoginResult(token, user.Role,false,user.Id);
     }
 
     public async Task<bool> FirstResetAsync(string tenantId, string userId, string newPassword, CancellationToken ct = default)
     {
         var ds = _factory.Get(tenantId);
         var newHash = BCrypt.Net.BCrypt.HashPassword(newPassword, workFactor: 11);
-        return await _users.SetPasswordAndCompleteFirstLoginAsync(ds, userId.Trim().ToLowerInvariant(), newHash, ct);
+        return await _users.SetPasswordAndCompleteFirstLoginAsync(ds, userId.Trim(), newHash, ct);
     }
 }

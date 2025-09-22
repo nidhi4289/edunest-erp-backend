@@ -1,4 +1,4 @@
-public record LoginResult(string Token, string Role, bool passwordResetRequired);
+public record LoginResult(string Token, string Role, bool passwordResetRequired,Guid UserGuid);
 
 public interface IAuthService
 {

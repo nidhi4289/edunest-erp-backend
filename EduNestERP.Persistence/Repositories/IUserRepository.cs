@@ -9,7 +9,8 @@ namespace EduNestERP.Persistence.Repositories
 
         Task<User?> ValidateCredentialsAsync(string userId, string passwordHash);
 
-         Task<bool> SetPasswordAndCompleteFirstLoginAsync(NpgsqlDataSource ds, string userId, string newHash, CancellationToken ct = default);
+        Task<bool> SetPasswordAndCompleteFirstLoginAsync(NpgsqlDataSource ds, string userId, string newHash, CancellationToken ct = default);
 
+        Task<bool> ResetPasswordAsync(string userId, string newHash);
     }
 }

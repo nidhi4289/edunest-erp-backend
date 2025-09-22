@@ -8,6 +8,7 @@ using Npgsql;
 using EduNestERP.Persistence.Repositories;
 using EduNestERP.Application.Interfaces;
 using EduNestERP.Application.Services;
+using EduNestERP.Application;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddAWSLambdaHosting(LambdaEventSource.HttpApi);
@@ -71,30 +72,30 @@ builder.Services.AddScoped<ITenantDataSourceProvider, TenantDataSourceProvider>(
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IStudentRepository, StudentRepository>();
-
+builder.Services.AddScoped<IStaffRepository, StaffRepository>();
+builder.Services.AddScoped<IStudentFeeRepository, StudentFeeRepository>();
+builder.Services.AddScoped<IMasterDataRepository, MasterDataRepository>();
+builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
+builder.Services.AddScoped<IHomeworkRepository, HomeworkRepository>();
+builder.Services.AddScoped<IStudentMarkRepository, StudentMarkRepository>();
+builder.Services.AddScoped<ICommunicationRepository, CommunicationRepository>();
+builder.Services.AddScoped<IFeeAdminRepository, FeeAdminRepository>();
 
 
 builder.Services.AddAutoMapper(typeof(Program));
 
-/*
-// Register repositories using the singleton dataSource
-builder.Services.AddScoped<IStudentRepository>(sp =>
-{
-    var ds = sp.GetRequiredService<NpgsqlDataSource>();
-    return new StudentRepository(ds);
-});
 
-
-// Register repositories using the singleton dataSource
-builder.Services.AddScoped<IUserRepository>(sp =>
-{
-    var ds = sp.GetRequiredService<NpgsqlDataSource>();
-    return new UserRepository(ds);
-});
-*/
 
 builder.Services.AddScoped<IStudentService, StudentService>();
+builder.Services.AddScoped<IStaffService, StaffService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IStudentFeeService, StudentFeeService>();
+builder.Services.AddScoped<IMasterDataService, MasterDataService>();
+builder.Services.AddScoped<IAttendanceService, AttendanceService>();
+builder.Services.AddScoped<ICommunicationService, CommunicationService>();
+builder.Services.AddScoped<IHomeworkService, HomeworkService>();
+builder.Services.AddScoped<IStudentMarkService, StudentMarkService>();
+
 builder.Services.AddControllers();
 
 var app = builder.Build(); // Ensure `app` is initialized here
@@ -111,28 +112,5 @@ app.MapControllers();
 app.MapGet("/health", () => Results.Ok(new { ok = true, ts = DateTime.UtcNow }))
    .WithOpenApi();
 
-/*
-app.MapPost("/auth/login", async (
-    [FromServices] IAuthService auth,
-    [FromBody] Login body,
-    CancellationToken ct) =>
-{
-    try
-    {
-        var result = await auth.LoginAsync(body.TenantId, body.UserId, body.Password, ct);
-        return Results.Ok(result); // { token, role }
-    }
-    catch (UnauthorizedAccessException)
-    {
-        return Results.Unauthorized();
-    }
-});
 
-
-app.MapPost("/auth/first-reset", async (IAuthService auth, FirstResetIn body, CancellationToken ct) =>
-{
-    var ok = await auth.FirstResetAsync(body.TenantId, body.UserId, body.NewPassword, ct);
-    return ok ? Results.Ok(new { ok = true }) : Results.NotFound(new { error = "user_not_found" });
-});
-*/
 app.Run();

@@ -16,6 +16,8 @@ namespace EduNestERP.Persistence.Entities
         public DateTime CreatedAt { get; set; } 
         public string CreatedBy { get; set; }
         public DateTime? ModifiedAt { get; set; }
+
+        public Guid ClassId { get; set; }
         public string ModifiedBy { get; set; } = "System";
         public string AdmissionNumber { get; set; }
         public string PhoneNumber { get; set; }

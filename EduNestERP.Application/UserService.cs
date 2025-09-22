@@ -21,7 +21,7 @@ namespace EduNestERP.Application.Services
         }
         public async Task<bool> ResetPasswordAsync(string userId, string newPassword)
         {
-            return false; //await _userRepository.ResetPasswordAsync(userId, newPassword);
+            return await _userRepository.ResetPasswordAsync(userId, newPassword);
         }
 
     }

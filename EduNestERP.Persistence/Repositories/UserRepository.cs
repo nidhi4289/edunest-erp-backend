@@ -21,6 +21,7 @@ public sealed class UserRepository : IUserRepository
 
         return new User
         {
+            Id = rdr.GetGuid(0),
             UserId = rdr.GetString(1),
             PasswordHash = rdr.GetString(2),
             Role = rdr.GetString(3),
@@ -46,7 +47,7 @@ public sealed class UserRepository : IUserRepository
     public async Task<User?> ValidateCredentialsAsync(string userId, string passwordHash)
     {
         await using var conn = await _dataSource.OpenConnectionAsync();
-        const string sql = "SELECT user_id, role, name FROM users WHERE user_id = @user_id AND password_hash = @password_hash";
+        const string sql = "SELECT user_id, role, name, id FROM users WHERE user_id = @user_id AND password_hash = @password_hash";
         await using var cmd = new NpgsqlCommand(sql, conn);
         cmd.Parameters.AddWithValue("user_id", userId);
         cmd.Parameters.AddWithValue("password_hash", passwordHash); // Use hashed passwords in production!
@@ -57,7 +58,9 @@ public sealed class UserRepository : IUserRepository
             {
                 UserId = rdr.GetString(0),
                 Role = rdr.GetString(1),
-                Name = rdr.GetString(2)
+                Name = rdr.GetString(2),
+                Id = rdr.GetGuid(3)
+            
             };
         }
         return null;

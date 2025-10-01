@@ -215,28 +215,128 @@ namespace EduNestERP.Persistence.Repositories
             return assessments;
         }
 
-        public async Task AddAssessmentAsync(Assessment newAssessment)
+        public async Task<bool> AddAssessmentAsync(Assessment newAssessment)
         {
-           
-            await using var conn = await _dataSource.OpenConnectionAsync();
-            var classSubjectId = await GetClassSubjectIdAsync(conn, newAssessment.ClassId, newAssessment.SubjectId);
+            try
+            {
+                await using var conn = await _dataSource.OpenConnectionAsync();
+                var classSubjectId = await GetClassSubjectIdAsync(conn, newAssessment.ClassId, newAssessment.SubjectId);
 
-            const string sql = @"INSERT INTO assessments (
+                const string sql = @"INSERT INTO assessments (
                 id, class_subject_id, name, assessment_date, grading_type, max_marks, created_at, updated_at, academic_year
             ) VALUES (
                 @id, @class_subject_id, @name, @assessment_date, @grading_type, @max_marks, @created_at, @updated_at, @academic_year
             )";
+                await using var cmd = new NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("id", newAssessment.Id == Guid.Empty ? Guid.NewGuid() : newAssessment.Id);
+                cmd.Parameters.AddWithValue("class_subject_id", classSubjectId);
+                cmd.Parameters.AddWithValue("name", newAssessment.Name);
+                cmd.Parameters.AddWithValue("assessment_date", newAssessment.AssessmentDate);
+                cmd.Parameters.AddWithValue("grading_type", newAssessment.GradingType);
+                cmd.Parameters.AddWithValue("max_marks", newAssessment.MaxMarks);
+                cmd.Parameters.AddWithValue("created_at", newAssessment.CreatedAt);
+                cmd.Parameters.AddWithValue("updated_at", newAssessment.UpdatedAt);
+                cmd.Parameters.AddWithValue("academic_year", newAssessment.AcademicYear);
+                var result = await cmd.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<Assessment?> GetAssessmentByIdAsync(Guid id)
+        {
+            await using var conn = await _dataSource.OpenConnectionAsync();
+            const string sql = @"SELECT a.id, a.name, a.academic_year, a.assessment_date, a.grading_type, a.max_marks, 
+                               a.created_at, a.updated_at, c.grade, c.section, cs.class_id, cs.subject_id, s.name as subject_name
+                        FROM assessments a 
+                        JOIN class_subjects cs ON a.class_subject_id = cs.id
+                        JOIN classes c ON cs.class_id = c.id
+                        JOIN subjects s ON cs.subject_id = s.id
+                        WHERE a.id = @id";
+            
             await using var cmd = new NpgsqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("id", newAssessment.Id == Guid.Empty ? Guid.NewGuid() : newAssessment.Id);
-            cmd.Parameters.AddWithValue("class_subject_id", classSubjectId);
-            cmd.Parameters.AddWithValue("name", newAssessment.Name);
-            cmd.Parameters.AddWithValue("assessment_date", newAssessment.AssessmentDate);
-            cmd.Parameters.AddWithValue("grading_type", newAssessment.GradingType);
-            cmd.Parameters.AddWithValue("max_marks", newAssessment.MaxMarks);
-            cmd.Parameters.AddWithValue("created_at", newAssessment.CreatedAt);
-            cmd.Parameters.AddWithValue("updated_at", newAssessment.UpdatedAt);
-            cmd.Parameters.AddWithValue("academic_year", newAssessment.AcademicYear);
-            await cmd.ExecuteNonQueryAsync();
+            cmd.Parameters.AddWithValue("id", id);
+            await using var reader = await cmd.ExecuteReaderAsync();
+            
+            if (await reader.ReadAsync())
+            {
+                return new Assessment
+                {
+                    Id = reader.GetGuid(reader.GetOrdinal("id")),
+                    Name = reader.GetString(reader.GetOrdinal("name")),
+                    AcademicYear = reader.GetString(reader.GetOrdinal("academic_year")),
+                    AssessmentDate = reader.GetDateTime(reader.GetOrdinal("assessment_date")),
+                    GradingType = reader.GetString(reader.GetOrdinal("grading_type")),
+                    MaxMarks = reader.GetDecimal(reader.GetOrdinal("max_marks")),
+                    CreatedAt = reader.GetDateTime(reader.GetOrdinal("created_at")),
+                    UpdatedAt = reader.GetDateTime(reader.GetOrdinal("updated_at")),
+                    Grade = reader.GetString(reader.GetOrdinal("grade")),
+                    Section = reader.GetString(reader.GetOrdinal("section")),
+                    ClassId = reader.GetGuid(reader.GetOrdinal("class_id")),
+                    SubjectId = reader.GetGuid(reader.GetOrdinal("subject_id")),
+                    SubjectName = reader.GetString(reader.GetOrdinal("subject_name"))
+                };
+            }
+            
+            return null;
+        }
+
+        public async Task<bool> UpdateAssessmentAsync(Assessment assessment)
+        {
+            try
+            {
+                await using var conn = await _dataSource.OpenConnectionAsync();
+                var classSubjectId = await GetClassSubjectIdAsync(conn, assessment.ClassId, assessment.SubjectId);
+
+                const string sql = @"UPDATE assessments SET 
+                    class_subject_id = @class_subject_id,
+                    name = @name,
+                    assessment_date = @assessment_date,
+                    grading_type = @grading_type,
+                    max_marks = @max_marks,
+                    updated_at = @updated_at,
+                    academic_year = @academic_year
+                WHERE id = @id";
+                
+                await using var cmd = new NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("id", assessment.Id);
+                cmd.Parameters.AddWithValue("class_subject_id", classSubjectId);
+                cmd.Parameters.AddWithValue("name", assessment.Name);
+                cmd.Parameters.AddWithValue("assessment_date", assessment.AssessmentDate);
+                cmd.Parameters.AddWithValue("grading_type", assessment.GradingType);
+                cmd.Parameters.AddWithValue("max_marks", assessment.MaxMarks);
+                cmd.Parameters.AddWithValue("updated_at", DateTime.UtcNow);
+                cmd.Parameters.AddWithValue("academic_year", assessment.AcademicYear);
+                
+                var result = await cmd.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> DeleteAssessmentAsync(Guid id)
+        {
+            try
+            {
+                await using var conn = await _dataSource.OpenConnectionAsync();
+                const string sql = @"DELETE FROM assessments WHERE id = @id";
+                
+                await using var cmd = new NpgsqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("id", id);
+                
+                var result = await cmd.ExecuteNonQueryAsync();
+                return result > 0;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private async Task<Guid> GetClassSubjectIdAsync(NpgsqlConnection conn, Guid classId, Guid subjectId

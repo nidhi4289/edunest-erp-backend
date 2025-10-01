@@ -80,6 +80,7 @@ builder.Services.AddScoped<IHomeworkRepository, HomeworkRepository>();
 builder.Services.AddScoped<IStudentMarkRepository, StudentMarkRepository>();
 builder.Services.AddScoped<ICommunicationRepository, CommunicationRepository>();
 builder.Services.AddScoped<IFeeAdminRepository, FeeAdminRepository>();
+builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
 
 
 builder.Services.AddAutoMapper(typeof(Program));
@@ -95,6 +96,7 @@ builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 builder.Services.AddScoped<ICommunicationService, CommunicationService>();
 builder.Services.AddScoped<IHomeworkService, HomeworkService>();
 builder.Services.AddScoped<IStudentMarkService, StudentMarkService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 builder.Services.AddControllers();
 

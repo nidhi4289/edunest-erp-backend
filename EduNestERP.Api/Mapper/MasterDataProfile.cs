@@ -24,6 +24,11 @@ namespace EduNestERP.Application.Mapper
 
             CreateMap<CreateAssessmentDto, Assessment>()
             .ReverseMap();
+
+            CreateMap<UpdateAssessmentDto, Assessment>()
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+                .ReverseMap();
         }
     }
     public class SubjectProfile : Profile

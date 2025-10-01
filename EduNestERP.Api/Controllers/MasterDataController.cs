@@ -33,14 +33,141 @@ namespace EduNestERP.Api.Controllers
         {
             try
             {
+                _logger.LogInformation("AddAssessment - Request received for assessment: {Name}", assessmentDto.Name);
+                
                 var assessment = _mapper.Map<Assessment>(assessmentDto);
-                await _masterDataService.AddAssessmentAsync(assessment);
-                return Ok();
+                var result = await _masterDataService.AddAssessmentAsync(assessment);
+                
+                if (result == null)
+                {
+                    _logger.LogError("AddAssessment - Service error occurred");
+                    return StatusCode(500, "An error occurred while creating the assessment");
+                }
+
+                if (result == false)
+                {
+                    _logger.LogError("AddAssessment - Failed to add assessment");
+                    return StatusCode(500, "Failed to add assessment");
+                }
+                
+                _logger.LogInformation("AddAssessment - Assessment created successfully: {Name}", assessmentDto.Name);
+                return Ok(new { success = true, message = "Assessment created successfully" });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error adding assessment");
+                _logger.LogError(ex, "AddAssessment - Error adding assessment");
                 return StatusCode(500, new { message = "Internal server error occurred while adding assessment" });
+            }
+        }
+
+        /// <summary>
+        /// Get an assessment by ID
+        /// </summary>
+        /// <param name="id">Assessment ID</param>
+        /// <returns>Assessment details</returns>
+        [HttpGet("assessments/{id}")]
+        public async Task<IActionResult> GetAssessmentById(Guid id)
+        {
+            try
+            {
+                _logger.LogInformation("GetAssessmentById - Request received for ID: {Id}", id);
+
+                var assessment = await _masterDataService.GetAssessmentByIdAsync(id);
+
+                if (assessment == null)
+                {
+                    _logger.LogWarning("GetAssessmentById - Assessment not found for ID: {Id}", id);
+                    return NotFound("Assessment not found");
+                }
+
+                var assessmentDto = _mapper.Map<AssessmentDto>(assessment);
+                _logger.LogInformation("GetAssessmentById - Assessment retrieved successfully for ID: {Id}", id);
+                return Ok(assessmentDto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetAssessmentById - Exception occurred while getting assessment with ID: {Id}", id);
+                return StatusCode(500, "An unexpected error occurred");
+            }
+        }
+
+        /// <summary>
+        /// Update an existing assessment
+        /// </summary>
+        /// <param name="id">Assessment ID</param>
+        /// <param name="updateAssessmentDto">Updated assessment data</param>
+        /// <returns>Success status of the operation</returns>
+        [HttpPut("assessments/{id}")]
+        public async Task<IActionResult> UpdateAssessment(Guid id, [FromBody] UpdateAssessmentDto updateAssessmentDto)
+        {
+            try
+            {
+                _logger.LogInformation("UpdateAssessment - Request received for ID: {Id}", id);
+
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("UpdateAssessment - Invalid model state for ID: {Id}", id);
+                    return BadRequest(ModelState);
+                }
+
+                if (id != updateAssessmentDto.Id)
+                {
+                    _logger.LogWarning("UpdateAssessment - ID mismatch. Route ID: {RouteId}, Body ID: {BodyId}", id, updateAssessmentDto.Id);
+                    return BadRequest("ID in route does not match ID in request body");
+                }
+
+                var assessment = _mapper.Map<Assessment>(updateAssessmentDto);
+                var result = await _masterDataService.UpdateAssessmentAsync(assessment);
+
+                if (result == null)
+                {
+                    _logger.LogError("UpdateAssessment - Service error occurred for ID: {Id}", id);
+                    return StatusCode(500, "An error occurred while updating the assessment");
+                }
+
+                if (result == false)
+                {
+                    _logger.LogWarning("UpdateAssessment - Assessment not found or update failed for ID: {Id}", id);
+                    return NotFound("Assessment not found or update failed");
+                }
+
+                _logger.LogInformation("UpdateAssessment - Assessment updated successfully for ID: {Id}", id);
+                return Ok(new { success = true, message = "Assessment updated successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "UpdateAssessment - Exception occurred while updating assessment with ID: {Id}", id);
+                return StatusCode(500, "An unexpected error occurred");
+            }
+        }
+
+        /// <summary>
+        /// Delete an assessment
+        /// </summary>
+        /// <param name="id">Assessment ID</param>
+        /// <returns>Success status of the operation</returns>
+        [HttpDelete("assessments/{id}")]
+        public async Task<IActionResult> DeleteAssessment(Guid id)
+        {
+            try
+            {
+                _logger.LogInformation("DeleteAssessment - Request received for ID: {Id}", id);
+
+                var result = await _masterDataService.DeleteAssessmentAsync(id);
+
+                if (!result)
+                {
+                    _logger.LogWarning("DeleteAssessment - Assessment not found or delete failed for ID: {Id}", id);
+                    return NotFound("Assessment not found or delete failed");
+                }
+
+                _logger.LogInformation("DeleteAssessment - Assessment deleted successfully for ID: {Id}", id);
+                return Ok(new { success = true, message = "Assessment deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "DeleteAssessment - Exception occurred while deleting assessment with ID: {Id}", id);
+                return StatusCode(500, "An unexpected error occurred");
             }
         }
 

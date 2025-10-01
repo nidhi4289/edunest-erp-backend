@@ -23,4 +23,15 @@ namespace EduNestERP.Api.Model
         public string GradingType { get; set; }
         public decimal MaxMarks { get; set; }
     }
+
+    public class UpdateAssessmentDto
+    {
+        public Guid Id { get; set; }
+        public required string Name { get; set; }
+        public required string AcademicYear { get; set; }
+        public Guid ClassId { get; set; }
+        public Guid SubjectId { get; set; }
+        public required string GradingType { get; set; }
+        public decimal MaxMarks { get; set; }
+    }
 }

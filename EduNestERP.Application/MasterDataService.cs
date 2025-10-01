@@ -34,9 +34,77 @@ namespace EduNestERP.Application.Services
             await _masterDataRepository.AddClassAsync(newClass, subjectIds);
         }
 
-        public async Task AddAssessmentAsync(Assessment newAssessment)
+        public async Task<bool?> AddAssessmentAsync(Assessment newAssessment)
         {
-            await _masterDataRepository.AddAssessmentAsync(newAssessment);
+            try
+            {
+                _logger.LogInformation("AddAssessmentAsync - Adding assessment: {Name}", newAssessment.Name);
+                
+                newAssessment.Id = newAssessment.Id == Guid.Empty ? Guid.NewGuid() : newAssessment.Id;
+                newAssessment.CreatedAt = DateTime.UtcNow;
+                newAssessment.UpdatedAt = DateTime.UtcNow;
+                newAssessment.AssessmentDate = DateTime.UtcNow; // You may want to make this configurable
+                
+                var result = await _masterDataRepository.AddAssessmentAsync(newAssessment);
+                _logger.LogInformation("AddAssessmentAsync - Assessment add result: {Result}", result);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "AddAssessmentAsync - Error adding assessment");
+                return null;
+            }
+        }
+
+        public async Task<Assessment?> GetAssessmentByIdAsync(Guid id)
+        {
+            try
+            {
+                _logger.LogInformation("GetAssessmentByIdAsync - Retrieving assessment with ID: {Id}", id);
+                var assessment = await _masterDataRepository.GetAssessmentByIdAsync(id);
+                _logger.LogInformation("GetAssessmentByIdAsync - Assessment retrieved: {Found}", assessment != null);
+                return assessment;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetAssessmentByIdAsync - Error retrieving assessment with ID: {Id}", id);
+                return null;
+            }
+        }
+
+        public async Task<bool?> UpdateAssessmentAsync(Assessment assessment)
+        {
+            try
+            {
+                _logger.LogInformation("UpdateAssessmentAsync - Updating assessment with ID: {Id}", assessment.Id);
+                
+                assessment.UpdatedAt = DateTime.UtcNow;
+                var result = await _masterDataRepository.UpdateAssessmentAsync(assessment);
+                
+                _logger.LogInformation("UpdateAssessmentAsync - Assessment update result: {Result}", result);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "UpdateAssessmentAsync - Error updating assessment with ID: {Id}", assessment.Id);
+                return null;
+            }
+        }
+
+        public async Task<bool> DeleteAssessmentAsync(Guid id)
+        {
+            try
+            {
+                _logger.LogInformation("DeleteAssessmentAsync - Deleting assessment with ID: {Id}", id);
+                var result = await _masterDataRepository.DeleteAssessmentAsync(id);
+                _logger.LogInformation("DeleteAssessmentAsync - Assessment delete result: {Result}", result);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "DeleteAssessmentAsync - Error deleting assessment with ID: {Id}", id);
+                return false;
+            }
         }
 
         public async Task<List<Assessment>> GetAllAssessmentsAsync(string? academicYear, string? grade, string? section, string? assessmentName, string? subjectName)
